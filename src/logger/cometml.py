@@ -40,7 +40,7 @@ class CometMLWriter:
         try:
             import comet_ml
 
-            comet_ml.login()
+            comet_ml.login(api_key="YJnGjVwATdqZWWX9dLAnxA8BY")
 
             self.run_id = run_id
 

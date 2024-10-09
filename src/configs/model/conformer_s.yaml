@@ -1,0 +1,7 @@
+_target_: src.model.Conformer
+n_feats: 128
+inner_dim: 144
+mhsa_n_heads: 4
+n_blocks: 16
+decoder_dim: 320
+decoder_layers: 1

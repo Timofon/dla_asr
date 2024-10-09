@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import hydra
@@ -11,8 +12,10 @@ from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
+os.environ["HYDRA_FULL_ERROR"] = "1"
 
-@hydra.main(version_base=None, config_path="src/configs", config_name="baseline")
+
+@hydra.main(version_base=None, config_path="src/configs", config_name="deepspeech")
 def main(config):
     """
     Main script for training. Instantiates the model, optimizer, scheduler,

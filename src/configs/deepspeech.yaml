@@ -1,5 +1,5 @@
 defaults:
-  - model: conformer
+  - model: deepspeech
   - writer: wandb
   - metrics: example
   - datasets: onebatchtest

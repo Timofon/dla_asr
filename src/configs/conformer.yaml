@@ -1,17 +1,17 @@
 defaults:
-  - model: conformer
+  - model: conformer_s
   - writer: wandb
   - metrics: example
-  - datasets: onebatchtest
-  - dataloader: for_onebatchtest
+  - datasets: example
+  - dataloader: for_conformer_s_gtx_1650
   - transforms: example_only_instance
   - _self_
 optimizer:
   _target_: torch.optim.AdamW
-  lr: 3e-4
+  lr: 2.63e-6
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.OneCycleLR
-  max_lr: 1e-2
+  max_lr: 0.00416
   pct_start: 0.1
   steps_per_epoch: ${trainer.epoch_len}
   epochs: ${trainer.n_epochs}
