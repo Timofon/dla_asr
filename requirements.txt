@@ -12,6 +12,7 @@ comet_ml
 hydra-core
 wget
 editdistance
+datasets
 
 black
 isort
