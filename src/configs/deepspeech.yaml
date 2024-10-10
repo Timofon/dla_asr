@@ -2,16 +2,16 @@ defaults:
   - model: deepspeech
   - writer: wandb
   - metrics: example
-  - datasets: onebatchtest
-  - dataloader: for_onebatchtest
+  - datasets: librispeech
+  - dataloader: for_conformer_s_gtx_1650
   - transforms: example_only_instance
   - _self_
 optimizer:
   _target_: torch.optim.AdamW
-  lr: 3e-4
+  lr: 2.1e-4
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.OneCycleLR
-  max_lr: 1e-2
+  max_lr: 3.9e-4
   pct_start: 0.1
   steps_per_epoch: ${trainer.epoch_len}
   epochs: ${trainer.n_epochs}
@@ -21,7 +21,7 @@ loss_function:
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
 trainer:
-  log_step: 5
+  log_step: 25
   n_epochs: 50
   epoch_len: 200
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)

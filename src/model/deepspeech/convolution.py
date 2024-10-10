@@ -22,7 +22,7 @@ class ConvolutionModule(nn.Module):
             padding=(10, 5),
             kernel_size=(21, 11),
             stride=(2, 1),
-        )  # TODO
+        )
         self.batch_norm2 = nn.BatchNorm2d(32)
         self.activation2 = nn.Hardtanh(0, 20)
 

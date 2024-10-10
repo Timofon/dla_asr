@@ -18,6 +18,7 @@ class DeepSpeechBlock(nn.Module):
     def forward(self, x, hidden_state=None):
         x, hidden_state = self.gru(x, hidden_state)
 
+        # for bidirectionality
         x = x.reshape(x.shape[0], x.shape[1], 2, -1).sum(2)
 
         t_dim, n_dim = x.shape[0], x.shape[1]

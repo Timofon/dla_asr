@@ -33,22 +33,23 @@ class DeepSpeech2(nn.Module):
         self.head = nn.Linear(in_features=hidden_size, out_features=n_tokens)
 
     def forward(self, spectrogram, spectrogram_length, **batch):
-        x = spectrogram.unsqueeze(1)
-        x = self.conv_module(x)
+        spectrogram = spectrogram.unsqueeze(1)
+        spectrogram = self.conv_module(spectrogram)
 
-        N, C, F, T = x.shape
-        x = x.reshape(N, C * F, T)
+        batch_size, num_channels, n_feats, spec_len = spectrogram.shape
+        spectrogram = spectrogram.reshape(batch_size, num_channels * n_feats, spec_len)
 
-        x = x.permute(2, 0, 1).contiguous()
+        spectrogram = spectrogram.permute(2, 0, 1).contiguous()
 
-        h = None
+        hidden_state = None
         for block in self.deep_speech_blocks:
-            x, h = block(x, h)
+            spectrogram, hidden_state = block(spectrogram, hidden_state)
 
-        T, N, H = x.shape
-        x = x.reshape(T * N, H)
-        x = self.head(x)
-        output = x.reshape(T, N, -1).permute(1, 0, 2).contiguous()
+        spec_len, batch_size, hidden_size = spectrogram.shape
+        spectrogram = self.head(spectrogram.reshape(spec_len * batch_size, hidden_size))
+        output = (
+            spectrogram.reshape(spec_len, batch_size, -1).permute(1, 0, 2).contiguous()
+        )
 
         log_probs = nn.functional.log_softmax(output, dim=2)
         log_probs_length = self.transform_input_lengths(spectrogram_length)
