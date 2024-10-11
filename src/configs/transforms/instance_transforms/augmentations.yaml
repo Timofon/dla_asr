@@ -1,0 +1,31 @@
+train:
+  get_spectrogram:
+      _target_: torchvision.transforms.Compose
+      transforms:
+        - _target_: torchaudio.transforms.MelSpectrogram
+          sample_rate: 16000
+        - _target_: FrequencyMasking
+          param: 15
+          prob: 0.15
+        - _target_: TimeMasking
+          param: 30
+          prob: 0.15
+
+  audio: # name of the tensor on which we apply transform
+    _target_: torchvision.transforms.v2.Compose
+    transforms:
+      - _target_: src.transforms.wav_augs.Gain
+      - _target_: src.transforms.wav_augs.HighPassFilter
+        p: 0.15
+        max_cutoff_freq: 800
+        min_cutoff_freq: 300
+        sample_rate: ${datasets.train.target_sr}
+      - _target_: src.transforms.wav_augs.LowPassFilter
+        p: 0.15
+        max_cutoff_freq: 2200
+        min_cutoff_freq: 900
+        sample_rate: ${datasets.train.target_sr}
+inference:
+  get_spectrogram:
+    _target_: torchaudio.transforms.MelSpectrogram
+    sample_rate: 16000

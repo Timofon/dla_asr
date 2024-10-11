@@ -3,7 +3,7 @@ defaults:
   - writer: wandb
   - metrics: example
   - datasets: example
-  - dataloader: for_conformer_s_gtx_1650
+  - dataloader: for_t4
   - transforms: example_only_instance
   - _self_
 optimizer:

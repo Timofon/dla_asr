@@ -11,9 +11,9 @@ class DeepSpeech2(nn.Module):
 
         self.conv_module = ConvolutionModule()
 
-        rnn_input_size = self._count_rnn_input_size(n_feats, 20, 41, 2)
-        rnn_input_size = self._count_rnn_input_size(rnn_input_size, 10, 21, 2)
-        rnn_input_size = self._count_rnn_input_size(rnn_input_size, 10, 21, 2)
+        rnn_input_size = self.count_lengths_after_conv(n_feats, 20, 41, 2)
+        rnn_input_size = self.count_lengths_after_conv(rnn_input_size, 10, 21, 2)
+        rnn_input_size = self.count_lengths_after_conv(rnn_input_size, 10, 21, 2)
         rnn_input_size *= 96
 
         self.deep_speech_blocks = nn.ModuleList(
@@ -34,7 +34,7 @@ class DeepSpeech2(nn.Module):
 
     def forward(self, spectrogram, spectrogram_length, **batch):
         spectrogram = spectrogram.unsqueeze(1)
-        spectrogram = self.conv_module(spectrogram)
+        spectrogram, length = self.conv_module(spectrogram, spectrogram_length)
 
         batch_size, num_channels, n_feats, spec_len = spectrogram.shape
         spectrogram = spectrogram.reshape(batch_size, num_channels * n_feats, spec_len)
@@ -43,7 +43,7 @@ class DeepSpeech2(nn.Module):
 
         hidden_state = None
         for block in self.deep_speech_blocks:
-            spectrogram, hidden_state = block(spectrogram, hidden_state)
+            spectrogram, hidden_state = block(spectrogram, length, hidden_state)
 
         spec_len, batch_size, hidden_size = spectrogram.shape
         spectrogram = self.head(spectrogram.reshape(spec_len * batch_size, hidden_size))
@@ -56,14 +56,14 @@ class DeepSpeech2(nn.Module):
 
         return {"log_probs": log_probs, "log_probs_length": log_probs_length}
 
-    def _count_rnn_input_size(self, in_features, padding, kernel_size, stride):
+    def count_lengths_after_conv(self, in_features, padding, kernel_size, stride):
         return (in_features + 2 * padding - kernel_size) // stride + 1
 
     def transform_input_lengths(self, input_lengths):
         t_dim = input_lengths.max()
 
         t_dim = (t_dim + 2 * 5 - 11) // 2 + 1
-        t_dim = (t_dim + 2 * 5 - 11) // 2 + 1
+        t_dim = (t_dim + 2 * 5 - 11) + 1
         t_dim = (t_dim + 2 * 5 - 11) + 1
 
         return torch.zeros_like(input_lengths).fill_(t_dim)
