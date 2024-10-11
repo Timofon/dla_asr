@@ -11,10 +11,7 @@ class DeepSpeech2(nn.Module):
 
         self.conv_module = ConvolutionModule()
 
-        rnn_input_size = self.count_lengths_after_conv(n_feats, 20, 41, 2)
-        rnn_input_size = self.count_lengths_after_conv(rnn_input_size, 10, 21, 2)
-        rnn_input_size = self.count_lengths_after_conv(rnn_input_size, 10, 21, 2)
-        rnn_input_size *= 96
+        rnn_input_size = self.calculate_rnn_input_size(n_feats)
 
         self.deep_speech_blocks = nn.ModuleList(
             [
@@ -41,29 +38,31 @@ class DeepSpeech2(nn.Module):
 
         spectrogram = spectrogram.permute(2, 0, 1).contiguous()
 
-        hidden_state = None
         for block in self.deep_speech_blocks:
-            spectrogram, hidden_state = block(spectrogram, length, hidden_state)
+            spectrogram, _ = block(spectrogram, length)
 
         spec_len, batch_size, hidden_size = spectrogram.shape
-        spectrogram = self.head(spectrogram.reshape(spec_len * batch_size, hidden_size))
+        spectrogram = self.head(spectrogram.view(spec_len * batch_size, hidden_size))
         output = (
-            spectrogram.reshape(spec_len, batch_size, -1).permute(1, 0, 2).contiguous()
+            spectrogram.view(spec_len, batch_size, -1).permute(1, 0, 2).contiguous()
         )
 
         log_probs = nn.functional.log_softmax(output, dim=2)
-        log_probs_length = self.transform_input_lengths(spectrogram_length)
+        log_probs_length = length
 
         return {"log_probs": log_probs, "log_probs_length": log_probs_length}
 
-    def count_lengths_after_conv(self, in_features, padding, kernel_size, stride):
-        return (in_features + 2 * padding - kernel_size) // stride + 1
-
-    def transform_input_lengths(self, input_lengths):
-        t_dim = input_lengths.max()
-
-        t_dim = (t_dim + 2 * 5 - 11) // 2 + 1
-        t_dim = (t_dim + 2 * 5 - 11) + 1
-        t_dim = (t_dim + 2 * 5 - 11) + 1
-
-        return torch.zeros_like(input_lengths).fill_(t_dim)
+    def calculate_rnn_input_size(self, n_feats):
+        for conv in [
+            self.conv_module.conv1,
+            self.conv_module.conv2,
+            self.conv_module.conv3,
+        ]:
+            n_feats = (
+                n_feats
+                + 2 * conv.padding[0]
+                - conv.dilation[0] * (conv.kernel_size[0] - 1)
+                - 1
+            ) // conv.stride[0] + 1
+        rnn_input_size = n_feats * self.conv_module.conv3.out_channels
+        return rnn_input_size

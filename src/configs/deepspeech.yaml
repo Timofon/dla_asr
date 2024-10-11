@@ -3,15 +3,15 @@ defaults:
   - writer: wandb
   - metrics: example
   - datasets: librispeech
-  - dataloader: for_t4
+  - dataloader: for_3090
   - transforms: example_only_instance
   - _self_
 optimizer:
   _target_: torch.optim.AdamW
-  lr: 2.05e-4
+  lr: 2e-4
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.OneCycleLR
-  max_lr: 1e-3
+  max_lr: 4e-4
   pct_start: 0.1
   steps_per_epoch: ${trainer.epoch_len}
   epochs: ${trainer.n_epochs}
