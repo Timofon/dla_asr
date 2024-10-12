@@ -2,8 +2,8 @@ import re
 from string import ascii_lowercase
 
 import torch
+from pyctcdecode import Alphabet, BeamSearchDecoderCTC, build_ctcdecoder
 
-# TODO add CTC decode
 # TODO add BPE, LM, Beam Search support
 # Note: think about metrics and encoder
 # The design can be remarkably improved
@@ -14,18 +14,43 @@ class CTCTextEncoder:
     EMPTY_TOK = ""
     EMPTY_IND = 0
 
-    def __init__(self, alphabet=None, **kwargs):
+    def __init__(
+        self,
+        alphabet=None,
+        vocab_path=None,
+        lm_pretrained_path=None,
+        beam_size=3,
+        use_beam_search=False,
+        **kwargs,
+    ):
         """
         Args:
             alphabet (list): alphabet for language. If None, it will be
                 set to ascii
         """
 
+        self.beam_width = beam_size
+
+        if vocab_path:
+            with open(vocab_path) as file:
+                unigrams = [sym.lower() for sym in file.read().strip().split("\n")]
+
         if alphabet is None:
             alphabet = list(ascii_lowercase + " ")
 
         self.alphabet = alphabet
         self.vocab = [self.EMPTY_TOK] + list(self.alphabet)
+
+        if lm_pretrained_path:
+            self.decoder = build_ctcdecoder(
+                labels=self.vocab,
+                kenlm_model_path=lm_pretrained_path,
+                unigrams=unigrams,
+            )
+        elif use_beam_search:
+            self.decoder = BeamSearchDecoderCTC(
+                Alphabet(labels=self.vocab, is_bpe=False), language_model=None
+            )
 
         self.ind2char = dict(enumerate(self.vocab))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
@@ -70,6 +95,9 @@ class CTCTextEncoder:
             last_char_ind = ind
 
         return "".join(decoded)
+
+    def beam_search_ctc_decode(self, inds) -> str:
+        return self.decoder.decode(inds, beam_width=self.beam_width)
 
     @staticmethod
     def normalize_text(text: str):

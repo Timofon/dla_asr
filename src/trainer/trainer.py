@@ -79,15 +79,23 @@ class Trainer(BaseTrainer):
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
             self.log_spectrogram(**batch)
+            self.log_audio(**batch)
         else:
             # Log Stuff
             self.log_spectrogram(**batch)
-            self.log_predictions(**batch)
+            self.log_audio(**batch)
+            if self.use_beam_search:
+                self.log_beam_search_predictions(**batch)
+            else:
+                self.log_predictions(**batch)
 
     def log_spectrogram(self, spectrogram, **batch):
         spectrogram_for_plot = spectrogram[0].detach().cpu()
         image = plot_spectrogram(spectrogram_for_plot)
         self.writer.add_image("spectrogram", image)
+
+    def log_audio(self, audio, **batch):
+        self.writer.add_audio("audio", audio[0], 16000)
 
     def log_predictions(
         self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
@@ -114,6 +122,35 @@ class Trainer(BaseTrainer):
             rows[Path(audio_path).name] = {
                 "target": target,
                 "raw prediction": raw_pred,
+                "predictions": pred,
+                "wer": wer,
+                "cer": cer,
+            }
+        self.writer.add_table(
+            "predictions", pd.DataFrame.from_dict(rows, orient="index")
+        )
+
+    def log_beam_search_predictions(
+        self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
+    ):
+        argmax_inds = log_probs.detach().cpu().numpy()
+        argmax_inds = [
+            inds[: int(ind_len)]
+            for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
+        ]
+        argmax_texts = [
+            self.text_encoder.beam_search_ctc_decode(inds) for inds in argmax_inds
+        ]
+        tuples = list(zip(argmax_texts, text, audio_path))
+
+        rows = {}
+        for pred, target, audio_path in tuples[:examples_to_log]:
+            target = self.text_encoder.normalize_text(target)
+            wer = calc_wer(target, pred) * 100
+            cer = calc_cer(target, pred) * 100
+
+            rows[Path(audio_path).name] = {
+                "target": target,
                 "predictions": pred,
                 "wer": wer,
                 "cer": cer,

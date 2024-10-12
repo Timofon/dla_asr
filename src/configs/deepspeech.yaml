@@ -20,11 +20,16 @@ loss_function:
   _target_: src.loss.CTCLossWrapper
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
+  vocab_path: C:\Users\user\Documents\DLA\pytorch_project_template\src\lm_pretrained\librispeech-vocab.txt
+  lm_pretrained_path: C:\Users\user\Documents\DLA\pytorch_project_template\src\lm_pretrained\3-gram.pruned.1e-7.arpa.gz
+  use_beam_search: True
 trainer:
   log_step: 25
   n_epochs: 50
   epoch_len: 200
   max_grad_norm: 10
+  use_beam_search: True
+  beam_size: 3
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: cuda # device name or "auto"
@@ -33,4 +38,5 @@ trainer:
   save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"
+  from_pretrained: None
   seed: 1

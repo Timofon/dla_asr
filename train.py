@@ -66,6 +66,8 @@ def main(config):
     # epoch_len = number of iterations for iteration-based training
     # epoch_len = None or len(dataloader) for epoch-based training
     epoch_len = config.trainer.get("epoch_len")
+    use_beam_search = config.trainer.get("use_beam_search")
+    beam_size = config.trainer.get("beam_size")
 
     trainer = Trainer(
         model=model,
@@ -78,6 +80,8 @@ def main(config):
         device=device,
         dataloaders=dataloaders,
         epoch_len=epoch_len,
+        use_beam_search=use_beam_search,
+        beam_size=beam_size,
         logger=logger,
         writer=writer,
         batch_transforms=batch_transforms,
