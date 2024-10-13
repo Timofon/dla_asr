@@ -43,7 +43,7 @@ Follow these steps to install the project:
    pre-commit install
 ```
 
-2. Dowload model weights:
+3. Dowload model weights:
    
 ```
    cd dla_asr
@@ -66,6 +66,7 @@ To run inference (evaluate the model or save predictions):
 ```bash
 python3 inference.py HYDRA_CONFIG_ARGUMENTS
 ```
+You need to specify paths for language model and model_weights based on the paths on your device.
 
 ## Credits
 
