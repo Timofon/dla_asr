@@ -18,41 +18,37 @@ See the task assignment [here](https://github.com/markovka17/dla/tree/2024/hw1_a
 
 Follow these steps to install the project:
 
-0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)).
+0. Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html).
 
-   a. `conda` version:
+   a. conda version:
 
-   ```bash
    # create env
-   conda create -n project_env python=PYTHON_VERSION
+   conda create -n venv python=3.11
 
    # activate env
-   conda activate project_env
-   ```
-
-   b. `venv` (`+pyenv`) version:
-
-   ```bash
-   # create env
-   ~/.pyenv/versions/PYTHON_VERSION/bin/python3 -m venv project_env
-
-   # alternatively, using default python version
-   python3 -m venv project_env
-
-   # activate env
-   source project_env
-   ```
+   conda activate venv
+   
 
 1. Install all required packages
 
-   ```bash
+   cd dla_asr
+   
    pip install -r requirements.txt
-   ```
+   
 
-2. Install `pre-commit`:
-   ```bash
+2. Install pre-commit:
+   
+
    pre-commit install
-   ```
+   
+
+2. Dowload model weights:
+   
+
+   cd dla_asr
+   
+   python download.py
+   
 
 ## How To Use
 
