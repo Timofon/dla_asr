@@ -133,15 +133,15 @@ class Trainer(BaseTrainer):
     def log_beam_search_predictions(
         self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
     ):
-        argmax_inds = log_probs.detach().cpu().numpy()
-        argmax_inds = [
-            inds[: int(ind_len)]
-            for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
+        beam_search_probs = log_probs.detach().cpu().numpy()
+        beam_search_probs = [
+            probs[: int(ind_len)]
+            for probs, ind_len in zip(beam_search_probs, log_probs_length.numpy())
         ]
-        argmax_texts = [
-            self.text_encoder.beam_search_ctc_decode(inds) for inds in argmax_inds
+        beam_search_texts = [
+            self.text_encoder.ctc_beam_search_decode(probs) for probs in beam_search_probs
         ]
-        tuples = list(zip(argmax_texts, text, audio_path))
+        tuples = list(zip(beam_search_texts, text, audio_path))
 
         rows = {}
         for pred, target, audio_path in tuples[:examples_to_log]:

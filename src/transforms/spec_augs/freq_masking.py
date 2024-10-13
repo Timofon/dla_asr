@@ -9,7 +9,7 @@ class FrequencyMasking(nn.Module):
         self.augmentation = transforms.FrequencyMasking(freq_mask_param=param)
         self.prob = prob
 
-    def forward(self, spectrogram: torch.Tensor) -> torch.Tensor:
+    def __call__(self, spectrogram: torch.Tensor) -> torch.Tensor:
         if torch.rand(1) < self.prob:
             return self.augmentation(spectrogram)
 

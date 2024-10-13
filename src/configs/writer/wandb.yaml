@@ -1,7 +1,7 @@
 _target_: src.logger.WandBWriter
 project_name: "pytorch_template_asr_example"
 entity: null
-run_name: "deepspeech_fixed_fine_tune_on_other_with_lm_and_beam_search"
+run_name: "deepspeech_check_beam_search_and_lm"
 mode: "online"
 loss_names: ["loss"] # which losses to log (useful for multi-loss tasks, s.a. GANs)
 log_checkpoints: True # set to True if you want to log save_dir with checkpoints to W&B

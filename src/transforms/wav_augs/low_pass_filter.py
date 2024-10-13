@@ -12,10 +12,6 @@ class LowPassFilter(nn.Module):
             max_cutoff_freq=max_cutoff_freq,
             sample_rate=sample_rate,
         )
-        self.prob = prob
-
-    def forward(self, spectrogram: torch.Tensor) -> torch.Tensor:
-        if torch.rand(1) < self.prob:
-            return self.augmentation(spectrogram)
-
-        return spectrogram
+        
+    def __call__(self, spectrogram: torch.Tensor) -> torch.Tensor:
+        return self.augmentation(spectrogram.unsqueeze(1)).squeeze(1)

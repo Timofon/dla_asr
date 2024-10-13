@@ -1,13 +1,18 @@
 defaults:
-  - model: conformer_s
-  - metrics: example
-  - datasets: example_eval # we do not want to run inference on training data
-  - dataloader: for_conformer_s_gtx_1650
-  - transforms: example
+  - model: deepspeech
+  - metrics: example  
+  - datasets: test_inference # we do not want to run inference on training data
+  - dataloader: for_3090
+  - transforms: example_only_instance
   - _self_
+text_encoder:
+  _target_: src.text_encoder.CTCTextEncoder
+  use_beam_search: True
 inferencer:
-  device_tensors: ["data_object", "labels"] # which tensors should be on device (ex. GPU)
+  device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   device: cuda # device name or "auto"
-  save_path: "example" # any name here, can be a dataset name
+  save_path: "predictions" # any name here, can be a dataset name
   seed: 1
-  from_pretrained: "saved/model_best.pth" # path to the pretrained model
+  from_pretrained: "/home/ubuntu/dla_asr/saved/deepspeech_fixed_fine_tune_on_other_with_lm_and_beam_search/model_best.pth" # path to the pretrained model
+  use_beam_search: True
+  beam_size: 5

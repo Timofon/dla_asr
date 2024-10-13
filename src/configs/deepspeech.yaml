@@ -1,7 +1,7 @@
 defaults:
   - model: deepspeech
   - writer: wandb
-  - metrics: beam_search
+  - metrics: beam_search_and_argmax
   - datasets: librispeech
   - dataloader: for_3090
   - transforms: example_only_instance
@@ -25,8 +25,8 @@ text_encoder:
   use_beam_search: True
 trainer:
   log_step: 25
-  n_epochs: 50
-  epoch_len: 200
+  n_epochs: 25
+  epoch_len: 100
   max_grad_norm: 10
   use_beam_search: True
   beam_size: 5
