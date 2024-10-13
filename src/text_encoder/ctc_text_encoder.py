@@ -2,6 +2,7 @@ import re
 from string import ascii_lowercase
 
 import torch
+import os
 from pyctcdecode import Alphabet, BeamSearchDecoderCTC, build_ctcdecoder
 
 # TODO add BPE, LM, Beam Search support
@@ -28,13 +29,20 @@ class CTCTextEncoder:
             alphabet (list): alphabet for language. If None, it will be
                 set to ascii
         """
+        # convert model to lower case
+        lm_lowercase_path = 'lowercase_3-gram.pruned.1e-7.arpa'
+        if not os.path.exists(lm_lowercase_path):
+            with open(lm_pretrained_path, 'r') as f_upper:
+                with open(lm_lowercase_path, 'w') as f_lower:
+                    for line in f_upper:
+                        f_lower.write(line.lower())
 
-        self.beam_width = beam_size
-
+        # convert vocab to lower case
         if vocab_path:
             with open(vocab_path) as file:
                 unigrams = [sym.lower() for sym in file.read().strip().split("\n")]
 
+        self.beam_width = beam_size
         if alphabet is None:
             alphabet = list(ascii_lowercase + " ")
 
@@ -44,7 +52,7 @@ class CTCTextEncoder:
         if lm_pretrained_path:
             self.decoder = build_ctcdecoder(
                 labels=self.vocab,
-                kenlm_model_path=lm_pretrained_path,
+                kenlm_model_path=lm_lowercase_path,
                 unigrams=unigrams,
             )
         elif use_beam_search:

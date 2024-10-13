@@ -32,7 +32,7 @@ class ArgmaxCERMetric(BaseMetric):
 class BeamSearchCERMetric(BaseMetric):
     def __init__(self, text_encoder, beam_size, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.text_encoder = text_encoder()
+        self.text_encoder = text_encoder
         self.text_encoder.beam_width = beam_size
 
     def __call__(
