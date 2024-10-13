@@ -22,33 +22,34 @@ Follow these steps to install the project:
 
    a. conda version:
 
+```
    # create env
    conda create -n venv python=3.11
 
    # activate env
    conda activate venv
-   
+```   
 
 1. Install all required packages
-
+```
    cd dla_asr
    
    pip install -r requirements.txt
-   
+```
 
 2. Install pre-commit:
    
-
+```
    pre-commit install
-   
+```
 
 2. Dowload model weights:
    
-
+```
    cd dla_asr
    
    python download.py
-   
+```
 
 ## How To Use
 
