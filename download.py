@@ -3,7 +3,7 @@ import shutil
 
 import gdown
 
-URL_BEST_MODEL = "https://drive.google.com/file/d/1P_Hi8ZbASMmDJtE8o55OO6p9-XdE4B3f/view?usp=sharing"
+URL_BEST_MODEL = "https://drive.google.com/uc?id=1P_Hi8ZbASMmDJtE8o55OO6p9-XdE4B3f"
 
 def download():
     gdown.download(URL_BEST_MODEL)
