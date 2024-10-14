@@ -15,6 +15,7 @@ editdistance
 datasets
 pyctcdecode
 kenlm
+gdown
 
 black
 isort
