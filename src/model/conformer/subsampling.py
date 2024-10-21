@@ -6,10 +6,10 @@ class SubsamplingModule(nn.Module):
     def __init__(self, n_channels) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(
-            in_channels=1, out_channels=n_channels, kernel_size=2, stride=2
+            in_channels=1, out_channels=n_channels, kernel_size=3, stride=2
         )
         self.conv2 = nn.Conv2d(
-            in_channels=n_channels, out_channels=n_channels, kernel_size=2, stride=2
+            in_channels=n_channels, out_channels=n_channels, kernel_size=3, stride=2
         )
 
         self.relu1 = nn.ReLU()

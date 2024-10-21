@@ -19,12 +19,12 @@ class ConformerBlock(nn.Module):
 
         self.layer_norm = nn.LayerNorm(inner_dim)
 
-    def forward(self, spectrogram: torch.Tensor) -> torch.Tensor:
+    def forward(self, spectrogram: torch.Tensor, spectrogram_length: torch.Tensor) -> torch.Tensor:
         spectrogram = 0.5 * self.feed_forward1(spectrogram) + spectrogram
-        spectrogram = self.mhsa(spectrogram) + spectrogram
+        spectrogram = self.mhsa(spectrogram, spectrogram_length) + spectrogram
         spectrogram = self.conv(spectrogram) + spectrogram
         spectrogram = self.layer_norm(
-            spectrogram + 0.5 * self.feed_forward2(spectrogram)
-        )
+            spectrogram.permute(0, 2, 1) + 0.5 * self.feed_forward2(spectrogram).permute(0, 2, 1)
+        ).permute(0, 2, 1)
 
         return spectrogram

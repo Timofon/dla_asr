@@ -107,7 +107,7 @@ class Trainer(BaseTrainer):
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [
             inds[: int(ind_len)]
-            for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
+            for inds, ind_len in zip(argmax_inds, log_probs_length.cpu().numpy())
         ]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
@@ -136,7 +136,7 @@ class Trainer(BaseTrainer):
         beam_search_probs = log_probs.detach().cpu().numpy()
         beam_search_probs = [
             probs[: int(ind_len)]
-            for probs, ind_len in zip(beam_search_probs, log_probs_length.numpy())
+            for probs, ind_len in zip(beam_search_probs, log_probs_length.cpu().numpy())
         ]
         beam_search_texts = [
             self.text_encoder.ctc_beam_search_decode(probs) for probs in beam_search_probs

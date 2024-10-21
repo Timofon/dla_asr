@@ -20,7 +20,7 @@ class Conformer(nn.Module):
 
         self.subsampling = SubsamplingModule(n_channels=inner_dim)
         self.linear_expanding = nn.Linear(
-            in_features=inner_dim * (n_feats // 4), out_features=inner_dim
+            in_features=inner_dim * ((n_feats - 1) // 2 - 1) // 2, out_features=inner_dim
         )
 
         self.dropout = nn.Dropout(p=0.1)
@@ -40,17 +40,18 @@ class Conformer(nn.Module):
         self.head = nn.Linear(in_features=decoder_dim, out_features=n_tokens)
 
     def forward(
-        self, spectrogram, spectrogram_length, **batch
+        self, spectrogram: torch.Tensor, spectrogram_length: torch.Tensor, **batch
     ) -> torch.Tensor:  # [batch_size, inner_dim, spectrogram_length]
+        spectrogram_length = spectrogram_length.to(spectrogram.device)
+        
         spectrogram = self.subsampling(spectrogram)
 
-        spectrogram = self.linear_expanding(spectrogram)
+        spectrogram = self.linear_expanding(spectrogram).permute(0, 2, 1)
         spectrogram = self.dropout(spectrogram)
-
         for block in self.conformer_blocks:
-            spectrogram = block(spectrogram)
+            spectrogram = block(spectrogram, spectrogram_length)
 
-        output = self.head(self.lstm(spectrogram)[0])
+        output = self.head(self.lstm(spectrogram.permute(0, 2, 1))[0])
 
         log_probs = nn.functional.log_softmax(output, dim=-1)
         log_probs_length = self.transform_input_lengths(spectrogram_length)
@@ -66,7 +67,7 @@ class Conformer(nn.Module):
         Returns:
             output_lengths (Tensor): new temporal lengths
         """
-        return input_lengths // 4
+        return ((input_lengths - 1) // 2 - 1) // 2
 
     def __str__(self):
         """

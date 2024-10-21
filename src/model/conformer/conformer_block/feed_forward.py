@@ -22,16 +22,17 @@ class FeedForwardModule(nn.Module):
 
     def forward(
         self, spectrogram: torch.Tensor
-    ) -> torch.Tensor:  # [batch_size, inner_dim, spectrogram_length
+    ) -> torch.Tensor:  # [batch_size, inner_dim, spectrogram_length]
+        # print(spectrogram.shape)
         spectrogram = self.layer_norm(
-            spectrogram
-        )  # in layer norm [batch_size, spectrogram_length, inner_dim]
+            spectrogram.permute(0, 2, 1)
+        )
 
         spectrogram = self.linear_expanding(spectrogram)
         spectrogram = self.swish(spectrogram)
         spectrogram = self.dropout(spectrogram)
         spectrogram = self.linear_compressing(spectrogram)
 
-        spectrogram = self.dropout(spectrogram)
+        spectrogram = self.dropout(spectrogram).permute(0, 2, 1)
 
         return spectrogram

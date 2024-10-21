@@ -6,10 +6,10 @@ train:
           sample_rate: 16000
         - _target_: src.transforms.spec_augs.FrequencyMasking
           param: 15
-          prob: 1
+          prob: 0.35
         - _target_: src.transforms.spec_augs.TimeMasking
           param: 30
-          prob: 0.15
+          prob: 0.35
 
   audio: # name of the tensor on which we apply transform
     _target_: torchvision.transforms.v2.Compose

@@ -25,11 +25,11 @@ text_encoder:
   use_beam_search: True
 trainer:
   log_step: 25
-  n_epochs: 25
-  epoch_len: 100
+  n_epochs: 50
+  epoch_len: 200
   max_grad_norm: 10
   use_beam_search: True
-  beam_size: 5
+  beam_size: 15
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: cuda # device name or "auto"

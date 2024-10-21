@@ -2,98 +2,69 @@ import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
-class RelativePositionalEncoder(nn.Module):
-    def __init__(self, model_dim, max_len=5000):
+class Attention(nn.Module):
+    # Single-head attention
+    def __init__(self, embed_dim, num_heads, dropout):
         super().__init__()
-        self.model_dim = model_dim
+        attention_dim = embed_dim // num_heads
 
-        positional_encodings = torch.zeros(max_len, model_dim)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(
-            torch.arange(0, model_dim, 2).float()
-            * (-torch.log(torch.tensor(10000.0)) / model_dim)
-        )
+        self.WQ = nn.Linear(embed_dim, attention_dim, bias=False)
+        self.WK = nn.Linear(embed_dim, attention_dim, bias=False)
+        self.WV = nn.Linear(embed_dim, attention_dim, bias=False)
+        self.dropout = nn.Dropout(dropout)
 
-        positional_encodings[:, 0::2] = torch.sin(position * div_term)
-        positional_encodings[:, 1::2] = torch.cos(position * div_term)
+    def forward(self, query, key, value, mask=None):
+        # query, key, value: (batch_size, length, embed_dim)
+        # mask: (batch_size, length, length)
 
-        positional_encodings = positional_encodings.unsqueeze(0)
-        self.register_buffer("positional_encodings", positional_encodings)
+        Q = self.WQ(query)
+        K = self.WK(key)
+        V = self.WV(value)
+        # Q, K, V: (batch_size, length, attention_dim)
 
-    def forward(self, x):
-        return x + self.positional_encodings[:, : x.size(1)]
+        norm_factor = math.sqrt(Q.shape[-1])
+        dot_products = torch.bmm(Q, K.transpose(1, 2)) / norm_factor
+        # dot_products: (batch_size, length, length)
+
+        if mask is not None:
+            dot_products = dot_products.masked_fill(mask, -math.inf)
+
+        attention_score = nn.functional.softmax(dot_products, dim=-1)
+        attention = torch.bmm(self.dropout(attention_score), V)
+        # attention_score: (batch_size, length, length)
+        # attention: (batch_size, length, attention_dim)
+
+        return attention, attention_score
 
 
-# https://github.com/kimiyoung/transformer-xl/tree/master - official impl. of relative attention in Transformer-XL
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, d_model, num_heads, dropout_p=0.1):
-        super().__init__()
+    def __init__(self, embed_dim, num_heads, dropout):
+        super(MultiHeadSelfAttention, self).__init__()
 
-        self.d_model = d_model
-        self.d_head = d_model // num_heads
-        self.num_heads = num_heads
-        self.sqrt_dim = math.sqrt(d_model)
+        assert embed_dim % num_heads == 0
+        self.attention_heads = nn.ModuleList([Attention(embed_dim, num_heads, dropout)
+                                              for _ in range(num_heads)])
 
-        self.Q = nn.Linear(d_model, d_model)
-        self.K = nn.Linear(d_model, d_model)
-        self.V = nn.Linear(d_model, d_model)
-        self.proj = nn.Linear(d_model, d_model, bias=False)
+        self.linear = nn.Linear(embed_dim, embed_dim, bias=False)
 
-        self.dropout = nn.Dropout(p=dropout_p)
+    def forward(self, query, key, value, mask=None):
+        # query, key, value: (batch_size, length, embed_dim)
+        # mask: (batch_size, length, length)
+        attentions, attention_scores = [], []
 
-        self.u = nn.Parameter(torch.Tensor(self.num_heads, self.d_head))
-        self.v = nn.Parameter(torch.Tensor(self.num_heads, self.d_head))
+        for head in self.attention_heads:
+            attention, attention_score = head(query, key, value, mask)
+            attentions += [attention]
+            attention_scores += [attention_score]
 
-        self.layer_norm = nn.LayerNorm(d_model)
+        attentions = torch.cat(attentions, dim=-1)
+        attention_scores = torch.stack(attention_scores, dim=-1)
+        # attentions: (batch_size, length, embed_dim)
+        # attention_scores: (batch_size, length, length, num_heads)
 
-        self.out_proj = nn.Linear(d_model, d_model)
+        outputs = self.linear(attentions)
+        # outputs: (batch_size, length, embed_dim)
 
-    def forward(self, x, pos_embedding):
-        batch_size = x.size(0)
-
-        query = self.Q(x).view(batch_size, -1, self.num_heads, self.d_head)
-        key = (
-            self.K(x)
-            .view(batch_size, -1, self.num_heads, self.d_head)
-            .permute(0, 2, 1, 3)
-        )
-        value = (
-            self.V(x)
-            .view(batch_size, -1, self.num_heads, self.d_head)
-            .permute(0, 2, 1, 3)
-        )
-        pos_embedding = self.proj(pos_embedding).view(
-            batch_size, -1, self.num_heads, self.d_head
-        )
-
-        content_score = torch.matmul(
-            (query + self.u).transpose(1, 2), key.transpose(2, 3)
-        )
-        pos_score = torch.matmul(
-            (query + self.v).transpose(1, 2), pos_embedding.permute(0, 2, 3, 1)
-        )
-        pos_score = self._relative_positional_encoding(pos_score)
-
-        score = (content_score + pos_score) / self.sqrt_dim
-
-        attn = F.softmax(score, -1)
-        result = torch.matmul(attn, value).transpose(1, 2)
-        result = result.contiguous().view(batch_size, -1, self.d_model)
-
-        x = self.out_proj(result)
-        return x
-
-    def _relative_positional_encoding(self, pos_score):
-        batch_size, num_heads, seq_length1, seq_length2 = pos_score.size()
-        zeros = pos_score.new_zeros(batch_size, num_heads, seq_length1, 1)
-        padded_pos_score = torch.cat([zeros, pos_score], dim=-1)
-
-        padded_pos_score = padded_pos_score.view(
-            batch_size, num_heads, seq_length2 + 1, seq_length1
-        )
-        pos_score = padded_pos_score[:, :, 1:].view_as(pos_score)
-
-        return pos_score
+        return outputs, attention_scores
